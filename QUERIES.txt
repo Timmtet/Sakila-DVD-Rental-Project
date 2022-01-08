@@ -1,0 +1,70 @@
+--QUESTION 1 NO 1--
+SELECT c.name AS film_category,
+	COUNT(r.rental_id) AS sum_of_rentals
+FROM category c
+JOIN film_category fc
+ON c.category_id = fc.category_id
+JOIN film f
+ON fc.film_id = f.film_id
+JOIN inventory i
+ON f.film_id = i.film_id
+JOIN rental r
+ON i.inventory_id = r.inventory_id
+WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+GROUP BY 1
+ORDER BY 1,2;
+
+--QUESTION 1 NO 3--
+SELECT t1.category_name,
+              t1.percentile, 
+              COUNT(*) AS film_count
+FROM (SELECT  f.title AS title,
+	          c.name AS category_name,
+	          f.rental_duration AS rentals, 
+	          NTILE(4) OVER ( ORDER BY f.rental_duration) AS percentile
+FROM category c
+JOIN film_category fc
+ON c.category_id = fc.category_id
+JOIN film f
+ON fc.film_id = f.film_id
+WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')) t1
+GROUP BY 1,2
+ORDER BY 2,1;
+
+
+--QUESTION 2 NO 1--
+SELECT    DATE_PART('MONTH', rentals) AS month,
+                 DATE_PART('YEAR', rentals) AS year,
+                 store_id,
+                COUNT(*),
+                month || '-' || year AS date 
+FROM (SELECT DATE_PART('MONTH', r.rental_date) AS month,
+              	         DATE_PART('YEAR', r.rental_date) AS year,
+	         r.rental_date AS rentals,
+	         st.store_id AS store_id
+FROM rental r
+JOIN staff s
+ON r.staff_id = s.staff_id
+JOIN store st
+ON s.store_id = st.store_id )t1
+GROUP BY 1,2,3,5
+ORDER BY 1,2,4 DESC;
+
+--QUESTION 2 NO 2--
+SELECT DATE_TRUNC('MONTH', p.payment_date) AS MONTH,
+              first_name || ' ' || last_name AS name, 
+             COUNT(p.amount) As count,
+             SUM(p.amount) total_amt 
+FROM customer c
+JOIN payment p
+ON p.customer_id = c.customer_id
+WHERE p.payment_date BETWEEN '2007-01-01' AND '2008-01-01' AND  c.first_name || ' ' || c.last_name in (SELECT full_name from (SELECT c.first_name || ' ' || c.last_name AS full_name, SUM(p.amount)
+FROM customer c
+JOIN payment p
+ON p.customer_id = c.customer_id
+GROUP BY 1 ORDER BY 2 DESC LIMIT 10) t1)
+GROUP BY 1,2
+ORDER BY 2,1,3;
+
+
+
